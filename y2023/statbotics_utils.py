@@ -2,10 +2,10 @@ import json
 
 import pandas as pd
 from typing import Dict, Any, List
-import statbotics
 
 
 def download_matches(event: str, output_path: str, quals_only=True):
+    import statbotics
     sb = statbotics.Statbotics()
 
     elims = False if quals_only else None
