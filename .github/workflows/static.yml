@@ -42,7 +42,7 @@ jobs:
         run: pip3 install -r requirements.txt
 
       - name: Export Shiny App
-        run: shinylive export y2024 site
+        run: shinylive export y2023 site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
