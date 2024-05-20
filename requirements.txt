@@ -1,5 +1,7 @@
 faicons
-shiny
 seaborn
 pandas
+shiny
 shinylive
+shinywidgets
+statbotics==2.0.1
