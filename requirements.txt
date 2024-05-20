@@ -1,5 +1,5 @@
-faicons
-seaborn
+# faicons
+# seaborn
 pandas
 shiny
 shinylive
