@@ -1,151 +1,26 @@
-from shiny import App, reactive, render, ui
-from shinywidgets import output_widget, render_widget
+from shiny import App, ui
 from data_container import data_container
-import plotly.express as px
 
+from tabs.team_overview import team_tab_ui, team_tab_server
 from tabs.match_overview import match_tab_ui, match_tab_server
-
-
-def teams_tab():
-    return [
-        ui.page_sidebar(
-            ui.sidebar(
-                ui.input_select(
-                    "team_select",
-                    "Team",
-                    {
-                        str(team_number): str(team_number)
-                        for team_number in data_container.team_numbers
-                    },
-                    selected="3504",
-                ),
-                title="Filter Team",
-            ),
-            ui.layout_column_wrap(
-                ui.value_box(
-                    "Avg. Total Auto Pieces",
-                    ui.output_text("team_total_auto_pieces"),
-                ),
-                ui.value_box(
-                    "Avg. Auto Points",
-                    ui.output_text("team_avg_auto_points"),
-                ),
-                ui.value_box(
-                    "Avg. Total Teleop Pieces",
-                    ui.output_text("team_total_tele_pieces"),
-                ),
-                ui.value_box(
-                    "Avg. Teleop Points",
-                    ui.output_text("team_avg_tele_points"),
-                ),
-                fill=False,
-            ),
-            ui.layout_columns(
-                ui.card(
-                    ui.card_header("Bill length and depth"),
-                    output_widget("team_piece_summary"),
-                    full_screen=True,
-                ),
-                ui.card(
-                    ui.card_header("Team Data"),
-                    ui.output_data_frame("team_summary_data"),
-                    full_screen=True,
-                ),
-            ),
-        )
-    ]
-
-
-def raw_data_tab():
-    return [
-        ui.layout_columns(
-            ui.card(
-                ui.card_header("Penguin data"),
-                ui.output_data_frame("raw_data"),
-                full_screen=True,
-            ),
-        ),
-    ]
+from tabs.raw_data import raw_data_tab_ui, raw_data_tab_server
+from tabs.overview import overview_tab_ui, overview_tab_server
 
 
 app_ui = ui.page_navbar(
-    ui.nav_panel("Raw Data", *raw_data_tab()),
+    ui.nav_panel("Overview", overview_tab_ui("overview_tab")),
     ui.nav_panel("Match Summary", match_tab_ui("match_tab")),
-    ui.nav_panel("Teams", *teams_tab()),
+    ui.nav_panel("Team Summary", team_tab_ui("team_tab")),
+    ui.nav_panel("Raw Data", raw_data_tab_ui("raw_data")),
     title=data_container.event,
 )
 
 
 def server(input, output, session):
+    overview_tab_server("overview_tab")
     match_tab_server("match_tab")
-
-    @render.data_frame
-    def raw_data():
-        cols = data_container.scouted_data.keys()
-        return render.DataGrid(data_container.scouted_data[cols], filters=True)
-
-    ###########################
-    # Team Page
-    ###########################
-    @reactive.calc
-    def filter_by_team():
-        team_number = int(input.team_select())
-        return data_container.scouted_data[
-            data_container.scouted_data["Team Number"] == team_number
-        ]
-
-    @render_widget
-    def team_piece_summary():
-        team_data = filter_by_team()
-        print(team_data)
-        return px.bar(
-            team_data,
-            x="Match Number",
-            y=[
-                "autoConesHigh",
-                "autoConesMid",
-                "autoConesLow",
-                "autoCubesHigh",
-                "autoCubesMid",
-                "autoCubesLow",
-                "teleopConesHigh",
-                "teleopConesMid",
-                "teleopConesLow",
-                "teleopCubesHigh",
-                "teleopCubesMid",
-                "teleopCubesLow",
-            ],
-        )
-
-    @render.data_frame
-    def team_summary_data():
-        team_data = filter_by_team()
-        cols = team_data.keys()
-        return render.DataGrid(team_data[cols], filters=True)
-
-    @render.text
-    def team_total_auto_pieces():
-        team_data = filter_by_team()
-        return f"{team_data['totalAutoPieces'].mean():.1f}"
-
-    @render.text
-    def team_avg_auto_points():
-        team_data = filter_by_team()
-        return f"{team_data['totalAutoPoints'].mean():.1f}"
-
-    @render.text
-    def team_total_tele_pieces():
-        team_data = filter_by_team()
-        return f"{team_data['totalTeleopPieces'].mean():.1f}"
-
-    @render.text
-    def team_avg_tele_points():
-        team_data = filter_by_team()
-        return f"{team_data['totalTeleopPoints'].mean():.1f}"
-
-    ###########################
-    # Match Page
-    ###########################
+    team_tab_server("team_tab")
+    raw_data_tab_server("raw_data")
 
 
 app = App(app_ui, server)
