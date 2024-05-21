@@ -1,6 +1,8 @@
 from shiny import App, ui
 from data_container import data_container
 
+from shinywidgets import output_widget, render_widget
+
 from tabs.team_overview import team_tab_ui, team_tab_server
 from tabs.match_overview import match_tab_ui, match_tab_server
 from tabs.raw_data import raw_data_tab_ui, raw_data_tab_server

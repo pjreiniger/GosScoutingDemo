@@ -1,7 +1,7 @@
 from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
+from data_container import data_container, OUR_TEAM_NUMBER
 import plotly.express as px
-from data_container import data_container
 
 
 @module.ui
@@ -15,9 +15,9 @@ def team_tab_ui():
                     str(team_number): str(team_number)
                     for team_number in data_container.team_numbers
                 },
-                selected="3504",
+                selected=str(OUR_TEAM_NUMBER),
             ),
-            title="Filter Team",
+            title="Select Team",
         ),
         ui.layout_column_wrap(
             ui.value_box(
@@ -40,7 +40,7 @@ def team_tab_ui():
         ),
         ui.layout_columns(
             ui.card(
-                ui.card_header("Bill length and depth"),
+                ui.card_header("Cycles"),
                 output_widget("team_piece_summary"),
                 full_screen=True,
             ),
@@ -65,7 +65,6 @@ def team_tab_server(input: Inputs, output: Outputs, session: Session):
     @render_widget
     def team_piece_summary():
         team_data = filter_by_team()
-        print(team_data)
         return px.bar(
             team_data,
             x="Match Number",
