@@ -29,9 +29,6 @@ class DataContainer:
 
         self.match_numbers = pd.unique(self.statbotics_matches.match_number)
 
-        print(self.team_numbers)
-        print(self.scouted_data.keys())
-
     def __load_statbotics_matches(self, event):
         this_dir = os.path.dirname(os.path.realpath(__file__))
         filename = os.path.join(this_dir, "data", f"{event}_statbotics_matches.json")
@@ -68,3 +65,9 @@ class DataContainer:
         )
 
         return data_frame
+
+
+EVENT = "2023ohmv"
+OUR_TEAM_NUMBER = 3504
+
+data_container = DataContainer(EVENT)
