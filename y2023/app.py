@@ -1,10 +1,9 @@
 from shiny import App, reactive, render, ui
 from shinywidgets import output_widget, render_widget
-from data_container import DataContainer
+from data_container import data_container
 import plotly.express as px
-import statbotics_utils
 
-data_container = DataContainer("2023ohmv")
+from tabs.match_overview import match_tab_ui, match_tab_server
 
 
 def teams_tab():
@@ -57,85 +56,6 @@ def teams_tab():
     ]
 
 
-def matches_tab():
-    return [
-        ui.page_sidebar(
-            ui.sidebar(
-                ui.input_select(
-                    "match_select",
-                    "Match",
-                    {
-                        str(match_number): str(match_number)
-                        for match_number in data_container.match_numbers
-                    },
-                ),
-                title="Filter Team",
-            ),
-        #     ui.layout_column_wrap(
-        #         ui.value_box(
-        #             "Avg. Total Auto Pieces",
-        #             ui.output_text("team_total_auto_pieces"),
-        #         ),
-        #         ui.value_box(
-        #             "Avg. Auto Points",
-        #             ui.output_text("team_avg_auto_points"),
-        #         ),
-        #         ui.value_box(
-        #             "Avg. Total Teleop Pieces",
-        #             ui.output_text("team_total_tele_pieces"),
-        #         ),
-        #         ui.value_box(
-        #             "Avg. Teleop Points",
-        #             ui.output_text("team_avg_tele_points"),
-        #         ),
-        #         fill=False,
-        #     ),
-            ui.layout_column_wrap(
-                ui.value_box(
-                    "Red 1",
-                    ui.output_text("match_red_1_team"),
-                ),
-                ui.value_box(
-                    "Red 2",
-                    ui.output_text("match_red_2_team"),
-                ),
-                ui.value_box(
-                    "Red 3",
-                    ui.output_text("match_red_3_team"),
-                ),
-                fill=False,
-            ),
-            ui.layout_column_wrap(
-                ui.value_box(
-                    "Blue 1",
-                    ui.output_text("match_blue_1_team"),
-                ),
-                ui.value_box(
-                    "Blue 2",
-                    ui.output_text("match_blue_2_team"),
-                ),
-                ui.value_box(
-                    "Blue 3",
-                    ui.output_text("match_blue_3_team"),
-                ),
-                fill=False,
-            ),
-            ui.layout_columns(
-                ui.card(
-                    ui.card_header("Red Preview"),
-                    output_widget("match_red_preview"),
-                    full_screen=True,
-                ),
-                ui.card(
-                    ui.card_header("Blue Preview"),
-                    output_widget("match_blue_preview"),
-                    full_screen=True,
-                ),
-            ),
-        )
-    ]
-
-
 def raw_data_tab():
     return [
         ui.layout_columns(
@@ -150,13 +70,14 @@ def raw_data_tab():
 
 app_ui = ui.page_navbar(
     ui.nav_panel("Raw Data", *raw_data_tab()),
-    ui.nav_panel("Matches", *matches_tab()),
+    ui.nav_panel("Match Summary", match_tab_ui("match_tab")),
     ui.nav_panel("Teams", *teams_tab()),
     title=data_container.event,
 )
 
 
 def server(input, output, session):
+    match_tab_server("match_tab")
 
     @render.data_frame
     def raw_data():
@@ -169,7 +90,9 @@ def server(input, output, session):
     @reactive.calc
     def filter_by_team():
         team_number = int(input.team_select())
-        return data_container.scouted_data[data_container.scouted_data["Team Number"] == team_number]
+        return data_container.scouted_data[
+            data_container.scouted_data["Team Number"] == team_number
+        ]
 
     @render_widget
     def team_piece_summary():
@@ -223,71 +146,6 @@ def server(input, output, session):
     ###########################
     # Match Page
     ###########################
-    @reactive.calc
-    def filter_by_match():
-        match_number = int(input.match_select())
-        scouted_data = data_container.scouted_data[data_container.scouted_data["Match Number"] == match_number]
-        statbotics_data = data_container.statbotics_matches[data_container.statbotics_matches.match_number == match_number]
-
-        return scouted_data, statbotics_data
-
-    def _match_preview(alliance_data):
-        return px.bar(
-            alliance_data,
-            y=[
-                "totalAutoPieces",
-                "totalTeleopPieces",
-            ],
-        )
-
-
-    @render_widget
-    def match_red_preview():
-        scouted_data, statbotics_data = filter_by_match()
-
-        red_teams = statbotics_utils.get_red_teams_in_match(statbotics_data)
-        red_data = scouted_data[scouted_data["Team Number"].isin(red_teams)]
-        return _match_preview(red_data)
-
-
-    @render_widget
-    def match_blue_preview():
-        scouted_data, statbotics_data = filter_by_match()
-
-        blue_teams = statbotics_utils.get_blue_teams_in_match(statbotics_data)
-        blue_data = scouted_data[scouted_data["Team Number"].isin(blue_teams)]
-        return _match_preview(blue_data)
-
-    @render.text
-    def match_red_1_team():
-        scouted_data, statbotics_data = filter_by_match()
-        return f"{statbotics_data['red_1'].values[0]}"
-
-    @render.text
-    def match_red_2_team():
-        scouted_data, statbotics_data = filter_by_match()
-        return f"{statbotics_data['red_2'].values[0]}"
-
-    @render.text
-    def match_red_3_team():
-        scouted_data, statbotics_data = filter_by_match()
-        return f"{statbotics_data['red_3'].values[0]}"
-
-    @render.text
-    def match_blue_1_team():
-        scouted_data, statbotics_data = filter_by_match()
-        return f"{statbotics_data['blue_1'].values[0]}"
-
-    @render.text
-    def match_blue_2_team():
-        scouted_data, statbotics_data = filter_by_match()
-        return f"{statbotics_data['blue_2'].values[0]}"
-
-    @render.text
-    def match_blue_3_team():
-        scouted_data, statbotics_data = filter_by_match()
-        return f"{statbotics_data['blue_3'].values[0]}"
-
 
 
 app = App(app_ui, server)
